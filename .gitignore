@@ -2,3 +2,5 @@
 .*~
 .html
 .css
+*.tmp*
+*.swp
