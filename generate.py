@@ -1,7 +1,7 @@
 import re
 import util
 
-vocabulary = ['panic', 'picnic', 'ace', 'pack', 'pace', 'traffic', 'lilac', 'ice', 'spruce', 'frolic']
+vocabulary = ['panic', 'picnic', 'ace', 'pack', 'pace', 'traffic', 'lilac', 'ice', 'spruce', 'frolic', 'zinc', 'arc', 'sync']
 suffixes   = ['', '+ed', '+ing', '+s']
 
 
@@ -22,7 +22,7 @@ def iterateRules():
     #   http://docs.python.org/library/re.html
     ### TODO: YOUR CODE HERE
     #_c+ed
-    yield ("(.*)c\+([ei].*)","\\1ck\\2")
+    yield ("(.*[aeiou]c)\+([ei].*)", "\\1k\\2")
     #_c+_ing
 
     #util.raiseNotDefined()
@@ -47,3 +47,5 @@ def runTest():
             word = generate(analysis)
             print analysis, '\t->', word
             
+if __name__ == '__main__':
+    runTest()
