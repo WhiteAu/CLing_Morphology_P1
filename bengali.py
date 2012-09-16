@@ -52,7 +52,7 @@ def evaluate(truth, hypothesis):
 
 def stupidChannelModel(words, segmentations):
     # figure out the character vocabulary
-    vocab = Counter()
+    vocab = util.Counter()
     for w in words:
         for c in w:
             vocab[c] = vocab[c] + 1
@@ -69,7 +69,7 @@ def stupidChannelModel(words, segmentations):
 
 def stupidSourceModel(segmentations):
     # figure out the character vocabulary
-    vocab = Counter()
+    vocab = util.Counter()
     for s in segmentations:
         for c in s:
             vocab[c] = vocab[c] + 1
@@ -92,11 +92,11 @@ def bigramSourceModel(segmentations):
     for s in segmentations:
         prev = 'start'
         for c in s:
-            if not lm.has_key(prev): lm[prev] = Counter()
+            if not lm.has_key(prev): lm[prev] = util.Counter()
             lm[prev][c] = lm[prev][c] + 1
             prev = c
             vocab[c] = 1
-        if not lm.has_key(prev): lm[prev] = Counter()
+        if not lm.has_key(prev): lm[prev] = util.Counter()
         lm[prev]['end'] = lm[prev]['end'] + 1
 
     # smooth and normalize
@@ -136,7 +136,7 @@ def runTest(trainFile='bengali.train', devFile='bengali.dev', channel=stupidChan
     fst = channel(words, segs)
     fsa = source(segs)
 
-    preTrainOutput = runFST([fsa, fst], wordsDev, quiet=True)
+    preTrainOutput = FSM.runFST([fsa, fst], wordsDev, quiet=True)
     for i in range(len(preTrainOutput)):
         if len(preTrainOutput[i]) == 0: preTrainOutput[i] = words[i]
         else:                           preTrainOutput[i] = preTrainOutput[i][0]
@@ -145,7 +145,7 @@ def runTest(trainFile='bengali.train', devFile='bengali.dev', channel=stupidChan
 
     fst.trainFST(words, segs)
 
-    postTrainOutput = runFST([fsa, fst], wordsDev, quiet=True)
+    postTrainOutput = FSM.runFST([fsa, fst], wordsDev, quiet=True)
     for i in range(len(postTrainOutput)):
         if len(postTrainOutput[i]) == 0: postTrainOutput[i] = words[i]
         else:                            postTrainOutput[i] = postTrainOutput[i][0]

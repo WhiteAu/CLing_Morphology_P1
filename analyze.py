@@ -13,7 +13,7 @@ def buildSourceModel(vocabulary, suffixes):
     fsa.setFinalState('end')
     
     ### TODO: YOUR CODE HERE
-    util.raiseNotDefined()
+    #util.raiseNotDefined()
 
     return fsa
 
@@ -58,7 +58,7 @@ def buildChannelModel():
 
     # implementation of rule 3
     ### TODO: YOUR CODE HERE
-    util.raiseNotDefined()
+    #util.raiseNotDefined()
 
     return fst
 
@@ -67,11 +67,13 @@ def simpleTest():
     fst = buildChannelModel()
 
     print "==== Trying source model on strings 'ace+ed' ===="
-    output = FSM.runFST([fsa], ["ace+ed"])
+    #was [fsa]
+    output = FSM.runFST([fst], ["ace+ed"])
     print "==== Result: ", str(output), " ===="
 
     print "==== Trying source model on strings 'panic+ing' ===="
-    output = FSM.runFST([fsa], ["panic+ing"])
+    #was [fsa]
+    output = FSM.runFST([fst], ["panic+ing"])
     print "==== Result: ", str(output), " ===="
     
     print "==== Generating random paths for 'aced', using only channel model ===="
