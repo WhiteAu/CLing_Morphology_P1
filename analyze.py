@@ -12,8 +12,15 @@ def buildSourceModel(vocabulary, suffixes):
     fsa.setInitialState('start')
     fsa.setFinalState('end')
     
-    ### TODO: YOUR CODE HERE
-    #util.raiseNotDefined()
+    for word in vocabulary:
+        fsa.addEdgeSequence('start', '1', word)
+
+    fsa.addEdge('1', 'end', None)           # if there is no suffix
+
+    for suffix in suffixes:
+        if len(suffix) > 0:                 # skip if no suffix
+            fsa.addEdgeSequence('1', 'end', suffix)
+
 
     return fsa
 
@@ -57,8 +64,17 @@ def buildChannelModel():
     fst.addEdge('rule2d', 'end' , None, None)   # we're done
 
     # implementation of rule 3
-    ### TODO: YOUR CODE HERE
-    #util.raiseNotDefined()
+    fst.addEdge('start' , 'rule3' , '.', '.')     # not sure if eps or not
+    fst.addEdge('rule3' , 'rule3' , '.', '.')     
+    for c in ['a','e','i','o','u']:
+        fst.addEdge('rule3', 'rule3b', c, c)     
+    fst.addEdge('rule3b', 'rule3c', 'c', 'c')     
+    fst.addEdge('rule3c', 'rule3d', '+', 'k')     
+    fst.addEdge('rule3d', 'rule3e', 'e', 'e')     
+    fst.addEdge('rule3d', 'rule3e', 'i', 'i')     
+    fst.addEdge('rule3e', 'rule3e', '.', '.')     
+    fst.addEdge('rule3e', 'end' , None, None)   
+
 
     return fst
 
@@ -76,12 +92,25 @@ def simpleTest():
     output = FSM.runFST([fst], ["panic+ing"])
     print "==== Result: ", str(output), " ===="
     
+    #for w in vocabulary:
+        #for s in suffixes:
+            #analysis = w + s
+            #output = FSM.runFST([fsa],[analysis])[0][0]
+            #if output != analysis:
+                #print "FAILED"
+                #sys.exit(1)
+
     print "==== Generating random paths for 'aced', using only channel model ===="
     output = FSM.runFST([fst], ["aced"], maxNumPaths=10, randomPaths=True)
+    print "==== Result: ", str(output), " ===="
+
+    print "==== Generating random paths for 'aced', using only channel model ===="
+    output = FSM.runFST([fst], ["panicked"], maxNumPaths=10, randomPaths=True)
     print "==== Result: ", str(output), " ===="
 
     print "==== Disambiguating a few phrases: aced, panicked, paniced, sprucing ===="
     output = FSM.runFST([fsa,fst], ["aced", "paniced", "panicked", "sprucing"])
     print "==== Result: ", str(output), " ===="
 
-    
+if __name__ == '__main__':
+    simpleTest()

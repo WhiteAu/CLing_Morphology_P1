@@ -4,7 +4,7 @@ import os
 
 #Change to your carmel path!
 
-carmelPath = '/home/whiteau/installs/graehl/carmel/bin/linux/carmel'
+carmelPath = os.getenv('CARMEL_PATH','/home/whiteau/installs/graehl/carmel/bin/linux/carmel')
 
 class FSM:        
     def __init__(self, isTransducer=False, isProbabilistic=False):
