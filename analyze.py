@@ -84,12 +84,12 @@ def simpleTest():
 
     print "==== Trying source model on strings 'ace+ed' ===="
     #was [fsa]
-    output = FSM.runFST([fst], ["ace+ed"])
+    output = FSM.runFST([fsa], ["ace+ed"])
     print "==== Result: ", str(output), " ===="
 
     print "==== Trying source model on strings 'panic+ing' ===="
     #was [fsa]
-    output = FSM.runFST([fst], ["panic+ing"])
+    output = FSM.runFST([fsa], ["panic+ing"])
     print "==== Result: ", str(output), " ===="
     
     #for w in vocabulary:
