@@ -110,7 +110,13 @@ def bigramSourceModel(segmentations):
     fsa.setInitialState('start')
     fsa.setFinalState('end')
     ### TODO: YOUR CODE HERE
-    util.raiseNotDefined()
+    for x in lm:
+        fsa.addEdge('start', x, x)
+        fsa.addEdge(x, 'end', None)
+        for y in lm[x]:
+            fsa.addEdge(x, y, y)
+            fsa.addEdge(y, 'end', None)
+    #util.raiseNotDefined()
     return fsa
 
 def buildSegmentChannelModel(words, segmentations):
@@ -118,6 +124,7 @@ def buildSegmentChannelModel(words, segmentations):
     fst.setInitialState('start')
     fst.setFinalState('end')
     ### TODO: YOUR CODE HERE
+    
     util.raiseNotDefined()
 
     return fst
