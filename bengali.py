@@ -114,18 +114,32 @@ def bigramSourceModel(segmentations):
         fsa.addEdge('start', x, x)
         fsa.addEdge(x, 'end', None)
         for y in lm[x]:
-            fsa.addEdge(x, y, y)
-            fsa.addEdge(y, 'end', None)
+            fsa.addEdge(y, x, y)
+            fsa.addEdge(y, 'end', 'end')
+            
+            
     #util.raiseNotDefined()
     return fsa
 
 def buildSegmentChannelModel(words, segmentations):
+    segments = set()
     fst = FSM.FSM(isTransducer=True, isProbabilistic=True)
     fst.setInitialState('start')
     fst.setFinalState('end')
+    fst.addEdge('endseg', 'end', None, None)
+    fst.addEdge('endseg', 'start', '+', None)
     ### TODO: YOUR CODE HERE
+    #add chunks to our segment set
+    for s in segmentations:
+        chunks = s.split('+')
+        for c in chunks:
+            segments.add(c)
     
-    util.raiseNotDefined()
+    for s in segments:
+        fst.addEdgeSequence('start', 'endseg', s)
+    
+    
+    #util.raiseNotDefined()
 
     return fst
 
@@ -168,3 +182,21 @@ def saveOutput(filename, output):
         h.write('\n')
     h.close()
     
+
+if __name__ == '__main__':
+
+    print '/*******************************/'
+    print '/*******bigram and segment******/'
+    print '/*******************************/'
+    runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
+
+    print '/*******************************/'
+    print '/*******bigram only*************/'
+    print '/*******************************/'
+    runTest(source=bigramSourceModel)
+
+    print '/*******************************/'
+    print '/*******seg channel only********/'
+    print '/*******************************/'
+
+    runTest(channel=buildSegmentChannelModel)
