@@ -85,7 +85,10 @@ def stupidSourceModel(segmentations):
         fsa.addEdge('s', 's', c, prob=v)
     return fsa
 
-def bigramSourceModel(segmentations):
+def bigramSourceModel(segmentations): return bigramSourceModel2(segmentations)[0]
+
+# This version of bigramSourceModel returns the vocab and lm objects, not just the fsm
+def bigramSourceModel2(segmentations):
     # compute all bigrams
     lm = {}
     vocab = {}
@@ -110,17 +113,14 @@ def bigramSourceModel(segmentations):
     fsa = FSM.FSM(isProbabilistic=True)
     fsa.setInitialState('start')
     fsa.setFinalState('end')
-    ### TODO: YOUR CODE HERE
-    for x in lm:
-        fsa.addEdge('start', x, x)
-        fsa.addEdge(x, 'end', None)
-        for y in lm[x]:
-            fsa.addEdge(y, x, y)
-            fsa.addEdge(y, 'end', 'end')
-            
-            
-    #util.raiseNotDefined()
-    return fsa
+    for h in lm:
+        for c in lm[h]:
+            if c == 'end':
+                fsa.addEdge(h, c, None, prob=lm[h][c]) # need esp
+            else:
+                fsa.addEdge(h, c, c, prob=lm[h][c])
+
+    return (fsa,vocab,lm)
 
 def buildSegmentChannelModel(words, segmentations):
     segments = set()
@@ -199,5 +199,4 @@ if __name__ == '__main__':
     print '/*******************************/'
     print '/*******seg channel only********/'
     print '/*******************************/'
-
     runTest(channel=buildSegmentChannelModel)
