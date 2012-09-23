@@ -4,3 +4,4 @@
 .css
 *.tmp*
 *.swp
+.DS_Store
