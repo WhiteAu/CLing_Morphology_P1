@@ -106,7 +106,7 @@ def bigramSourceModel2(segmentations):
     # smooth and normalize
     for prev in lm.iterkeys():
         for c in vocab.iterkeys():
-            lm[prev][c] = lm[prev][c] + 0.2   # add 0.5 smoothing
+            lm[prev][c] = lm[prev][c] + 0.5   # add 0.5 smoothing
         lm[prev].normalize()
 
     # convert to a FSA
@@ -151,7 +151,6 @@ def buildSegmentChannelModel(words, segmentations):
     fst.addEdge('start', 'end', None, None, prob=0.1)
     
     return fst
-
 
 def fancySourceModel(segmentations): return fancySourceModel2(segmentations)[0]
     
@@ -222,10 +221,72 @@ def fancySourceModel2(segmentations):
     return (fsa, lm)
 
 def fancyChannelModel(words, segmentations):
-    raise Exception("fancyChannelModel not defined")
+    return fancyChannelModel2(words,segmentations)[0]
 
+def fancyChannelModel2(words, segmentations):
+    segments = set()
+    charDict = {}
+    fst = FSM.FSM(isTransducer=True, isProbabilistic=True)
+    fst.setInitialState('start')
+    fst.setFinalState('end')
+    fst.addEdge('endseg', 'end', None, None)
+    fst.addEdge('endseg', 'start', '+', None)
+    #add chunks to our segment set
+    for s in segmentations:
+        chunks = s.split('+')
+        for c in chunks:
+            segments.add(c)
+
+    for s in segments:
+        fst.addEdgeSequence('start', 'endseg', s)
+
+    fst.addEdge('start', 'end', None, None, prob=0.1)
+    #fst.addEdge('start', 'start', '+', None, prob=0.1)
+
+    # compute all bigrams
+    lm = {}
+    vocab = {}
+    vocab['end'] = 1
+    for s in segmentations:
+        prev = 'start'
+        for c in s:
+            if not lm.has_key(prev): lm[prev] = util.Counter()
+            lm[prev][c] = lm[prev][c] + 1
+            prev = c
+            vocab[c] = 1
+        if not lm.has_key(prev): lm[prev] = util.Counter()
+        lm[prev]['end'] = lm[prev]['end'] + 1
+
+    # smooth and normalize
+    for prev in lm.iterkeys():
+        for c in vocab.iterkeys():
+            lm[prev][c] = lm[prev][c] + 0.5   # add 0.5 smoothing
+        lm[prev].normalize()
+
+    # convert to a fst
+    for h in lm:
+        for c in lm[h]:
+            if c == 'end':
+                # instead of going to end, we can just go to start.  It has an eps transition,
+                # and it allows us to restart with other characters.
+                fst.addEdge(h, 'start', None, None, prob=lm[h][c])
+            elif c == '+':
+                fst.addEdge(h, 'start', c, None, prob=lm[h][c])
+            else:
+                fst.addEdge(h, c, c, c, prob=lm[h][c])
+
+    #iterate over all characters we've seen in bengali and add some small prob to 'smooth' unseen segments  
+    #for word in words:
+        #for char in word:
+            #if not char in charDict:
+                ##print char
+                #charDict[char] = 1
+                #fst.addEdge('start', 'start', char, char, prob=0.1)
+
+
+    return (fst,vocab,lm) 
     
-def runTest(trainFile='bengali.train', devFile='bengali.test', channel=stupidChannelModel, source=stupidSourceModel):
+def runTest(trainFile='bengali.train', devFile='bengali.dev', channel=stupidChannelModel, source=stupidSourceModel):
     (words, segs) = readData(trainFile)
     (wordsDev, segsDev) = readData(devFile)
     fst = channel(words, segs)
@@ -260,11 +321,6 @@ def saveOutput(filename, output):
 if __name__ == '__main__':
 
     print '/*******************************/'
-    print '/*******seg channel only********/'
-    print '/*******************************/'
-    #runTest(channel=buildSegmentChannelModel)
-
-    print '/*******************************/'
     print '/*******bigram and segment******/'
     print '/*******************************/'
     #runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
@@ -273,6 +329,18 @@ if __name__ == '__main__':
     print '/*******bigram only*************/'
     print '/*******************************/'
     #runTest(source=bigramSourceModel)
-    runTest(source = fancySourceModel, channel = buildSegmentChannelModel)
 
-    
+    print '/*******************************/'
+    print '/*******seg channel only********/'
+    print '/*******************************/'
+    runTest(channel=buildSegmentChannelModel)
+
+    print '/*******************************/'
+    print '/*******fancy source only*************/'
+    print '/*******************************/'
+    runTest(source=fancySourceModel)
+
+    print '/*******************************/'
+    print '/*******fancy source and segment******/'
+    print '/*******************************/'
+    runTest(source=fancySourceModel,channel=buildSegmentChannelModel)
