@@ -106,7 +106,7 @@ def bigramSourceModel2(segmentations):
     # smooth and normalize
     for prev in lm.iterkeys():
         for c in vocab.iterkeys():
-            lm[prev][c] = lm[prev][c] + 0.5   # add 0.5 smoothing
+            lm[prev][c] = lm[prev][c] + 0.2   # add 0.5 smoothing
         lm[prev].normalize()
 
     # convert to a FSA
@@ -153,14 +153,79 @@ def buildSegmentChannelModel(words, segmentations):
     return fst
 
 
-def fancySourceModel(segmentations):
-    raise Exception("fancySourceModel not defined")
+def fancySourceModel(segmentations): return fancySourceModel2(segmentations)[0]
+    
+def fancySourceModel2(segmentations):
+    #lm = [[[0 for x in range(1000)] for x in range(1000)] for x in range(1000)]
+    lm = {}
+    bi = {}
+    vocab = {}
+    vocab['end'] = 1
+    for s in segmentations:
+        prev = 'start'
+        prev1 = 'start'
+        for c in s:
+            
+            if not prev1 in lm:
+                lm[prev1] = {}
+            if not prev in lm[prev1]:
+                #lm[prev1][prev] = util.Counter()
+                lm[prev1][prev] = {}
+            if not c in lm[prev1][prev]:
+                lm[prev1][prev][c] = 0
+            lm[prev1][prev][c] = lm[prev1][prev][c] + 1
+            if not prev1 in bi:
+                bi[prev1] = {}
+            if not prev in bi[prev1]:
+                bi[prev1][prev] = 0
+            bi[prev1][prev] = bi[prev1][prev] +1
+            prev1 = prev
+            prev = c
+            vocab[c] = 1
+                #if not bi.has_key(prev): bi[prev] = util.Counter()
+        if not prev1 in lm:
+                lm[prev1] = {}
+        if not prev in lm[prev1]:
+                lm[prev1][prev] = {}
+        if not 'end' in lm[prev1][prev]:
+            lm[prev1][prev]['end'] = 0
+        if not prev1 in bi:
+            bi[prev1] = {}
+        if not prev in bi[prev1]:
+            bi[prev1][prev] = 0
+        lm[prev1][prev]['end'] = lm[prev1][prev]['end'] + 1
+        bi[prev1][prev] = bi[prev1][prev] + 1
+    # smooth and normalize
+    for prev1 in lm:
+        for prev in lm[prev1]:
+            for c in lm[prev1][prev]:
+                lm[prev1][prev][c] = (lm[prev1][prev][c] + 0.1)/bi[prev1][prev]
+    
+    # convert to a FSA
+    fsa = FSM.FSM(isProbabilistic=True)
+    fsa.setInitialState('start')
+    fsa.setFinalState('end')
+
+    for p in lm:
+        for h in lm[p]:
+            fsa.addEdge('start',p+h, p+h)
+            for c in lm[p][h]:
+                if c == 'end':
+                    fsa.addEdge(p+h, 'end', None, prob=lm[p][h][c]) # need esp
+                else:
+                    fsa.addEdge(p+h, h+c, c, prob=lm[p][h][c])
+    
+    for p in lm:
+        for h in lm[p]:
+            for c in lm[p][h]:
+                print lm[p][h][c]
+    return (fsa, lm)
 
 def fancyChannelModel(words, segmentations):
     raise Exception("fancyChannelModel not defined")
 
     
-def runTest(trainFile='bengali.train', devFile='bengali.dev', channel=stupidChannelModel, source=stupidSourceModel):
+def runTest(trainFile='bengali.train', devFile='bengali.test', channel=stupidChannelModel, source=stupidSourceModel):
     (words, segs) = readData(trainFile)
     (wordsDev, segsDev) = readData(devFile)
     fst = channel(words, segs)
@@ -197,16 +262,17 @@ if __name__ == '__main__':
     print '/*******************************/'
     print '/*******seg channel only********/'
     print '/*******************************/'
-    runTest(channel=buildSegmentChannelModel)
+    #runTest(channel=buildSegmentChannelModel)
 
     print '/*******************************/'
     print '/*******bigram and segment******/'
     print '/*******************************/'
-    runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
+    #runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
 
     print '/*******************************/'
     print '/*******bigram only*************/'
     print '/*******************************/'
-    runTest(source=bigramSourceModel)
+    #runTest(source=bigramSourceModel)
+    runTest(source = fancySourceModel, channel = buildSegmentChannelModel)
 
     
