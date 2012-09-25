@@ -124,11 +124,12 @@ def bigramSourceModel2(segmentations):
 
 def buildSegmentChannelModel(words, segmentations):
     segments = set()
+    charDict = {}
     fst = FSM.FSM(isTransducer=True, isProbabilistic=True)
     fst.setInitialState('start')
     fst.setFinalState('end')
-    fst.addEdge('endseg', 'end', None, None)
-    fst.addEdge('endseg', 'start', '+', None)
+    fst.addEdge('endseg', 'end', None, None, prob=0.1)
+    fst.addEdge('endseg', 'start', '+', None, prob=0.1)
     ### TODO: YOUR CODE HERE
     #add chunks to our segment set
     for s in segmentations:
@@ -137,16 +138,26 @@ def buildSegmentChannelModel(words, segmentations):
             segments.add(c)
     
     for s in segments:
+        #can't fiddle with prob here... is this okay??
         fst.addEdgeSequence('start', 'endseg', s)
-    
+        #fst.addEdge('start', 'endseg', s, 
+        
+    #iterate over all characters we've seen in bengali and add some small prob to 'smooth' unseen segments  
+    for word in words:
+        for char in word:
+            if not char in charDict:
+                #print char
+                charDict[char] = 1
+                fst.addEdge('start', 'start', char, char, prob=0.1)
+
     
     #util.raiseNotDefined()
 
     return fst
 
 
-def fancySouceModel(segmentations):
-    raise Exception("fancySouceModel not defined")
+def fancySourceModel(segmentations):
+    raise Exception("fancySourceModel not defined")
 
 def fancyChannelModel(words, segmentations):
     raise Exception("fancyChannelModel not defined")
@@ -187,6 +198,11 @@ def saveOutput(filename, output):
 if __name__ == '__main__':
 
     print '/*******************************/'
+    print '/*******seg channel only********/'
+    print '/*******************************/'
+    runTest(channel=buildSegmentChannelModel)
+
+    print '/*******************************/'
     print '/*******bigram and segment******/'
     print '/*******************************/'
     runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
@@ -196,7 +212,4 @@ if __name__ == '__main__':
     print '/*******************************/'
     runTest(source=bigramSourceModel)
 
-    print '/*******************************/'
-    print '/*******seg channel only********/'
-    print '/*******************************/'
-    runTest(channel=buildSegmentChannelModel)
+    
