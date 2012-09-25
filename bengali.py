@@ -128,9 +128,8 @@ def buildSegmentChannelModel(words, segmentations):
     fst = FSM.FSM(isTransducer=True, isProbabilistic=True)
     fst.setInitialState('start')
     fst.setFinalState('end')
-    fst.addEdge('endseg', 'end', None, None, prob=0.1)
-    fst.addEdge('endseg', 'start', '+', None, prob=0.1)
-    ### TODO: YOUR CODE HERE
+    fst.addEdge('endseg', 'end', None, None)
+    fst.addEdge('endseg', 'start', '+', None)
     #add chunks to our segment set
     for s in segmentations:
         chunks = s.split('+')
@@ -138,9 +137,7 @@ def buildSegmentChannelModel(words, segmentations):
             segments.add(c)
     
     for s in segments:
-        #can't fiddle with prob here... is this okay??
         fst.addEdgeSequence('start', 'endseg', s)
-        #fst.addEdge('start', 'endseg', s, 
         
     #iterate over all characters we've seen in bengali and add some small prob to 'smooth' unseen segments  
     for word in words:
@@ -150,9 +147,9 @@ def buildSegmentChannelModel(words, segmentations):
                 charDict[char] = 1
                 fst.addEdge('start', 'start', char, char, prob=0.1)
 
+    fst.addEdge('start', 'start', '+', None, prob=0.1)
+    fst.addEdge('start', 'end', None, None, prob=0.1)
     
-    #util.raiseNotDefined()
-
     return fst
 
 
