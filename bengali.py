@@ -167,11 +167,9 @@ def fancySourceModel2(segmentations):
             
             if not prev1 in lm:
                 lm[prev1] = {}
-            if not prev in lm[prev1]:
-                #lm[prev1][prev] = util.Counter()
-                lm[prev1][prev] = {}
-            if not c in lm[prev1][prev]:
-                lm[prev1][prev][c] = 0
+            if not lm[prev1].has_key(prev): lm[prev1][prev] = util.Counter()
+                #if not c in lm[prev1][prev]:
+                #lm[prev1][prev][c] = 0
             lm[prev1][prev][c] = lm[prev1][prev][c] + 1
             if not prev1 in bi:
                 bi[prev1] = {}
@@ -184,10 +182,11 @@ def fancySourceModel2(segmentations):
                 #if not bi.has_key(prev): bi[prev] = util.Counter()
         if not prev1 in lm:
                 lm[prev1] = {}
-        if not prev in lm[prev1]:
-                lm[prev1][prev] = {}
-        if not 'end' in lm[prev1][prev]:
-            lm[prev1][prev]['end'] = 0
+                #if not prev in lm[prev1]:
+                #lm[prev1][prev] = {}
+                #if not 'end' in lm[prev1][prev]:
+                #lm[prev1][prev]['end'] = 0
+        if not lm[prev1].has_key(prev): lm[prev1][prev] = util.Counter()        
         if not prev1 in bi:
             bi[prev1] = {}
         if not prev in bi[prev1]:
@@ -195,10 +194,16 @@ def fancySourceModel2(segmentations):
         lm[prev1][prev]['end'] = lm[prev1][prev]['end'] + 1
         bi[prev1][prev] = bi[prev1][prev] + 1
     # smooth and normalize
-    for prev1 in lm:
-        for prev in lm[prev1]:
-            for c in lm[prev1][prev]:
-                lm[prev1][prev][c] = (lm[prev1][prev][c] + 0.1)/bi[prev1][prev]
+    #for prev1 in lm.iterkeys():
+    #for prev in lm[prev1].iterkeys():
+    #for c in vocab.iterkeys():
+    #lm[prev1][prev][c] = 0
+
+    for prev1 in lm.iterkeys():
+        for prev in lm[prev1].iterkeys():
+            for c in vocab.iterkeys():
+                lm[prev1][prev][c] = lm[prev1][prev][c] + 0.5
+            lm[prev1][prev].normalize()
     
     # convert to a FSA
     fsa = FSM.FSM(isProbabilistic=True)
@@ -207,17 +212,16 @@ def fancySourceModel2(segmentations):
 
     for p in lm:
         for h in lm[p]:
-            fsa.addEdge('start',p+h, p+h)
+            #fsa.addEdge('start',p+h, p+h)
             for c in lm[p][h]:
                 if c == 'end':
                     fsa.addEdge(p+h, 'end', None, prob=lm[p][h][c]) # need esp
                 else:
-                    fsa.addEdge(p+h, h+c, c, prob=lm[p][h][c])
-    
-    for p in lm:
-        for h in lm[p]:
-            for c in lm[p][h]:
-                print lm[p][h][c]
+                    if(p+h != 'startstart'):
+                        fsa.addEdge(p+h, h+c, c, prob=lm[p][h][c])
+                    else:
+                        fsa.addEdge('start',h+c,c, prob=lm[p][h][c])
+                        
     return (fsa, lm)
 
 def fancyChannelModel(words, segmentations):
@@ -319,16 +323,28 @@ def saveOutput(filename, output):
     
 
 if __name__ == '__main__':
+    #segs = ['ad+s']
+    #words = ['ads']
+    #(fsa, vocab, lm) = bigramSourceModel2(segs)
+    #print lm
+    #(fsa,lm) = fancySourceModel2(segs)
+    #print lm 
+    ##print fsa.edges
+    #print "%d edges"%fsa.M
+    #for fromNode in fsa.edges:
+        #for toNode in fsa.edges[fromNode]:
+            #(consume,emit,probability) = fsa.edges[fromNode][toNode][0]
+            #print "%s ----%s:%s---P=%f----> %s" % (fromNode,consume,emit,probability,toNode)
 
     print '/*******************************/'
     print '/*******bigram and segment******/'
     print '/*******************************/'
-    #runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
+    runTest(source=bigramSourceModel,channel=buildSegmentChannelModel)
 
     print '/*******************************/'
     print '/*******bigram only*************/'
     print '/*******************************/'
-    #runTest(source=bigramSourceModel)
+    runTest(source=bigramSourceModel)
 
     print '/*******************************/'
     print '/*******seg channel only********/'
@@ -344,3 +360,12 @@ if __name__ == '__main__':
     print '/*******fancy source and segment******/'
     print '/*******************************/'
     runTest(source=fancySourceModel,channel=buildSegmentChannelModel)
+
+    print '/*******************************/'
+    print '/*******fancy source and fancy segment******/'
+    print '/*******************************/'
+    runTest(source=fancySourceModel,channel=fancyChannelModel)
+
+    output = runTest(devFile="bengali.test",source=fancySourceModel,channel=fancyChannelModel)
+    saveOutput('bengali.test.predictions', output)
+
